@@ -1,0 +1,167 @@
+<script>
+export default {
+  name: 'EventCard',
+  props: {
+    event: {
+      type: Object,
+      required: true,
+      validator(value) {
+        return value &&
+          typeof value.title === 'string' &&
+          typeof value.category === 'string'
+      }
+    }
+  }
+}
+</script>
+import { createRouter, createWebHistory } from 'vue-router'
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes: [
+    { path: '/events', component: () => import('./views/EventsList.vue') },
+    { path: '/events/:id', component: () => import('./views/EventDetail.vue') },
+    { path: '/events/registration/:id', component: () => import('./views/EventRegistration.vue') },
+
+    // Redirect root
+    { path: '/', redirect: '/events' },
+
+    // Catch-all 404
+    { path: '/:pathMatch(.*)*', component: () => import('./views/NotFoundPage.vue') }
+  ]
+})
+
+// Prevent redundant navigation errors
+const originalPush = router.push
+router.push = function (location) {
+  return originalPush.call(this, location).catch(() => {})
+}
+
+export default router
+<template>
+  <div class="event-list">
+    <EventCard
+      v-for="event in paginatedEvents"
+      :key="event.id"
+      :event="event"
+      v-memo="[event.id]"
+      @open-details="openDetails"
+      @open-registration="openRegistration"
+    />
+
+    <div class="pagination">
+      <button @click="prevPage" :disabled="page === 1">Prev</button>
+      <span>Page {{ page }}</span>
+      <button @click="nextPage" :disabled="endIndex >= events.length">Next</button>
+    </div>
+  </div>
+</template>
+
+<script>
+import { defineAsyncComponent } from 'vue'
+
+export default {
+  name: 'EventList',
+
+  components: {
+    EventCard: defineAsyncComponent(() => import('./EventCard.vue'))
+  },
+
+  props: {
+    events: {
+      type: Array,
+      required: true
+    }
+  },
+
+  data() {
+    return {
+      page: 1,
+      pageSize: 20
+    }
+  },
+
+  computed: {
+    startIndex() {
+      return (this.page - 1) * this.pageSize
+    },
+    endIndex() {
+      return this.startIndex + this.pageSize
+    },
+    paginatedEvents() {
+      return this.events.slice(this.startIndex, this.endIndex)
+    }
+  },
+
+  methods: {
+    nextPage() {
+      if (this.endIndex < this.events.length) this.page++
+    },
+    prevPage() {
+      if (this.page > 1) this.page--
+    },
+    openDetails(id) {
+      this.$router.push(`/events/${id}`)
+    },
+    openRegistration(id) {
+      this.$router.push(`/events/registration/${id}`)
+    }
+  }
+}
+</script>
+
+
+
+
+
+
+<template>
+  <div class="event-card">
+    <div class="event-header">
+      <h2>{{ event.title }}</h2>
+      <span class="event-category">{{ event.category }}</span>
+    </div>
+
+    <div class="event-details">
+      <p><strong>Date:</strong> {{ event.date }}</p>
+      <p><strong>Time:</strong> {{ event.time }}</p>
+      <p><strong>Location:</strong> {{ event.location }}</p>
+    </div>
+
+    <div class="registration-info">
+      <h3>Registration</h3>
+      <p>{{ event.registrationStart }} - {{ event.registrationEnd }}</p>
+    </div>
+
+    <button class="register-btn" @click="$emit('open-registration', event.id)">
+      Register
+    </button>
+
+    <button class="details-btn" @click="$emit('open-details', event.id)">
+      View Details
+    </button>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'EventCard',
+  props: {
+    event: {
+      type: Object,
+      required: true
+    }
+  }
+}
+</script>
+{
+  path: '/:pathMatch(.*)*',
+  components: {
+  EventCard: defineAsyncComponent(() => import('./EventCard.vue'))
+}
+
+
+
+
+
+
